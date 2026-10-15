@@ -181,33 +181,33 @@ function collectRelatedTestFiles(changedFiles) {
   return [...testFiles]
 }
 
-function newestDmg() {
+function newestArtifact() {
   const dist = join(repoRoot, 'dist')
-  const dmgs = existsSync(dist) ? readdirSync(dist).filter((name) => name.endsWith('.dmg')) : []
-  if (dmgs.length === 0) {
-    die('No .dmg found in dist/ — check the build output above.')
+  // Why the zip over the dmg: auto-install extracts with ditto, which needs no
+  // GUI/XPC session — hdiutil attach hangs in launchd and env-stripped contexts.
+  const artifacts = existsSync(dist)
+    ? readdirSync(dist).filter((name) => name.endsWith('-mac.zip'))
+    : []
+  if (artifacts.length === 0) {
+    die('No mac artifact found in dist/ — check the build output above.')
   }
-  // Auto-install the freshest dmg (name sort desc ≈ newest, the version carries a timestamp).
-  dmgs.sort((left, right) => right.name.localeCompare(left.name))
-  return join(dist, dmgs[0].name)
+  // Name sort desc ≈ newest: the artifact name carries the local build timestamp.
+  artifacts.sort((left, right) => right.localeCompare(left))
+  return join(dist, artifacts[0])
 }
 
-function installDmg(dmgPath) {
+function installArtifact(artifactPath) {
   step('Installing into /Applications')
-  run('hdiutil', ['attach', dmgPath, '-nobrowse', '-quiet'])
-  try {
-    const volume = readdirSync('/Volumes').find(
-      (entry) => entry.startsWith('Orca') && existsSync(join('/Volumes', entry, 'Orca.app'))
-    )
-    if (!volume) {
-      die('Mounted dmg has no Orca.app at its root.')
-    }
-    // Why rm first: ditto merges, which would leave stale files from the old build.
-    run('rm', ['-rf', '/Applications/Orca.app'])
-    run('ditto', [join('/Volumes', volume, 'Orca.app'), '/Applications/Orca.app'])
-  } finally {
-    run('hdiutil', ['detach', '/Volumes/Orca*', '-quiet'], { allowFailure: true, shell: true })
+  const staging = join(repoRoot, 'dist', 'staging-install')
+  run('rm', ['-rf', staging])
+  run('ditto', ['-x', '-k', artifactPath, staging])
+  if (!existsSync(join(staging, 'Orca.app'))) {
+    die('Extracted artifact has no Orca.app at its root.')
   }
+  // Why rm first: ditto merges, which would leave stale files from the old build.
+  run('rm', ['-rf', '/Applications/Orca.app'])
+  run('ditto', [join(staging, 'Orca.app'), '/Applications/Orca.app'])
+  run('rm', ['-rf', staging])
 }
 
 function packageMac() {
@@ -242,13 +242,13 @@ function packageMac() {
       break
     }
   }
-  const fresh = spawnSync('find', [newestDmg(), '-newermt', '-45 minutes'])
-  if (!existsSync(newestDmg()) || fresh.status !== 0) {
+  const fresh = spawnSync('find', [newestArtifact(), '-newermt', '-45 minutes'])
+  if (!existsSync(newestArtifact()) || fresh.status !== 0) {
     die(`Build did not produce a fresh dmg within 45 minutes — see ${buildLog}`)
   }
-  const dmgPath = newestDmg()
+  const artifactPath = newestArtifact()
   if (AUTO) {
-    installDmg(dmgPath)
+    installArtifact(artifactPath)
     step('Done')
     notify('新版本已构建并安装，重启 Orca 生效')
     console.log('Installed /Applications/Orca.app. Restart Orca to run the new build.')
@@ -256,7 +256,7 @@ function packageMac() {
   }
   step('Done')
   console.log(
-    `Built: ${dmgPath}\n` +
+    `Built: ${artifactPath}\n` +
       'Open the dmg and drag Orca into Applications to over-install this fork.\n' +
       'Tip: keep in-app auto-update off so an official release cannot overwrite your customizations.'
   )
