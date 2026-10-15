@@ -1,0 +1,87 @@
+# Keeps this fork's main aligned with upstream stablyai/orca: daily merge,
+# typecheck + test gate, and an issue when the merge conflicts so a human
+# resolves it while the divergence is still small.
+name: Upstream sync
+
+on:
+  schedule:
+    # 01:30 UTC daily = 09:30 Beijing; GitHub may skew scheduled runs a few minutes.
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync upstream main
+        id: merge
+        env:
+          UPSTREAM_REPO: https://github.com/stablyai/orca.git
+        run: |
+          git config user.name "orca-fork-sync"
+          git config user.email "actions@users.noreply.github.com"
+          git remote add upstream "$UPSTREAM_REPO"
+          git fetch upstream main
+
+          behind="$(git rev-list --count HEAD..upstream/main)"
+          echo "behind=$behind" >> "$GITHUB_OUTPUT"
+          if [ "$behind" = "0" ]; then
+            echo "Upstream main has no new commits; nothing to do."
+            exit 0
+          fi
+
+          if ! git merge --no-edit upstream/main; then
+            echo "::error::Merge conflict with upstream/main. Conflicting files:"
+            git diff --name-only --diff-filter=U | sed 's/^/  - /'
+            git merge --abort
+            exit 42
+          fi
+
+      - name: Open an issue when the merge conflicts
+        if: failure() && steps.merge.outputs.behind != '0' && steps.merge.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="Upstream merge conflict $(date -u +%F)"
+          if gh issue list --search "in:title \"$title\"" --state open | grep -q .; then
+            echo "Conflict issue already open."
+            exit 0
+          fi
+          gh issue create \
+            --title "$title" \
+            --body "Automated upstream sync hit a merge conflict. Run \`pnpm sync:upstream\` locally, resolve, then push main." \
+            --label "upstream-sync"
+
+      - name: Install dependencies
+        if: steps.merge.outcome == 'success' && steps.merge.outputs.behind != '0'
+        uses: ./.github/actions/install-node-dependencies
+        with:
+          native-runtime: node
+          node-version: '24'
+
+      - name: Typecheck
+        if: steps.merge.outcome == 'success' && steps.merge.outputs.behind != '0'
+        run: pnpm tc
+
+      - name: Test
+        if: steps.merge.outcome == 'success' && steps.merge.outputs.behind != '0'
+        run: pnpm test
+
+      - name: Push synced main
+        if: steps.merge.outcome == 'success' && steps.merge.outputs.behind != '0'
+        run: git push origin main
