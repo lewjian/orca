@@ -53,12 +53,13 @@ jobs:
           fi
 
       - name: Open an issue when the merge conflicts
-        if: failure() && steps.merge.outputs.behind != '0' && steps.merge.outcome == 'failure'
+        if: failure() && steps.merge.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           title="Upstream merge conflict $(date -u +%F)"
-          if gh issue list --search "in:title \"$title\"" --state open | grep -q .; then
+          existing="$(gh issue list --search "in:title \"$title\"" --state open)"
+          if [ -n "$existing" ]; then
             echo "Conflict issue already open."
             exit 0
           fi
