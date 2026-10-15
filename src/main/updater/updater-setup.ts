@@ -37,19 +37,38 @@ export type UpdaterSetupOptions = {
 
 /** Initializes electron-updater and attaches lifecycle/event bridges. */
 export class UpdaterSetup extends UpdaterDownloadInstall {
+  // Why: fork local builds carry a `-local.` version. Any official-feed update would
+  // overwrite the fork's customizations with upstream bytes, so every updater action
+  // is a no-op there — sync happens via `pnpm sync:upstream` instead.
+  private static isForkLocalBuild(): boolean {
+    return app.getVersion().includes('-local.')
+  }
+
   checkForUpdates(): void {
+    if (UpdaterSetup.isForkLocalBuild()) {
+      return
+    }
     this.checkForUpdatesInBackground()
   }
 
   checkForUpdatesFromMenu(options?: UpdateCheckOptions): void {
+    if (UpdaterSetup.isForkLocalBuild()) {
+      return
+    }
     super.checkForUpdatesFromMenu(options)
   }
 
   downloadUpdate(): void {
+    if (UpdaterSetup.isForkLocalBuild()) {
+      return
+    }
     super.downloadUpdate()
   }
 
   quitAndInstall(): void {
+    if (UpdaterSetup.isForkLocalBuild()) {
+      return
+    }
     super.quitAndInstall()
   }
 
