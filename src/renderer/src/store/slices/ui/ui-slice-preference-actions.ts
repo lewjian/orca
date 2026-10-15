@@ -184,6 +184,7 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
         }
         return { expandedWorktreeOverflows: next }
       }),
+    collapseAllWorktreeOverflows: () => set({ expandedWorktreeOverflows: new Set<string>() }),
 
     worktreeCardProperties: [...DEFAULT_WORKTREE_CARD_PROPERTIES],
     _worktreeCardModeDefaulted: true,

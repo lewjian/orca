@@ -93,6 +93,8 @@ export type UISlicePreferences = {
    *  a fresh session collapses long lists again. */
   expandedWorktreeOverflows: ReadonlySet<string>
   toggleWorktreeOverflow: (sectionKey: string) => void
+  /** Switching projects re-collapses an expanded list (user request). */
+  collapseAllWorktreeOverflows: () => void
   worktreeCardProperties: WorktreeCardProperty[]
   _worktreeCardModeDefaulted: boolean
   setWorktreeCardMode: (mode: WorktreeCardMode) => void

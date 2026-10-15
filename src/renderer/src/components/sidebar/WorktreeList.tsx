@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { useAppStore } from '@/store'
 import { useShallow } from 'zustand/react/shallow'
 import {
@@ -89,6 +89,16 @@ const WorktreeList = React.memo(function WorktreeList({
   const toggleGroup = useAppStore((s) => s.toggleCollapsedGroup)
   const expandedWorktreeOverflows = useAppStore((s) => s.expandedWorktreeOverflows)
   const toggleWorktreeOverflow = useAppStore((s) => s.toggleWorktreeOverflow)
+  const collapseAllWorktreeOverflows = useAppStore((s) => s.collapseAllWorktreeOverflows)
+  // Why: an expansion is scoped to the project you expanded it in — switching the
+  // active workspace re-collapses every list (explicit user request).
+  const lastActiveWorktreeIdForOverflow = React.useRef<string | null>(activeWorktreeId)
+  useEffect(() => {
+    if (lastActiveWorktreeIdForOverflow.current !== activeWorktreeId) {
+      lastActiveWorktreeIdForOverflow.current = activeWorktreeId
+      collapseAllWorktreeOverflows()
+    }
+  }, [activeWorktreeId, collapseAllWorktreeOverflows])
   const projectGroups = useAppStore((s) => s.projectGroups ?? EMPTY_PROJECT_GROUPS)
   const folderWorkspaces = useAppStore((s) => s.folderWorkspaces)
   const settings = useAppStore((s) => s.settings)
@@ -108,17 +118,16 @@ const WorktreeList = React.memo(function WorktreeList({
   )
 
   const agentSendTargetWorktreeId = useAgentSendTargetWorktreeId()
-  // The workspace being worked in (and any pending agent-send target) never collapses away.
+  // Why only the agent-send target: the send picker must see the section holding its
+  // target. The active workspace stays collapsed like everything else — per-project
+  // lists keep showing 3 rows until the user explicitly expands them.
   const forceOpenWorktreeIds = useMemo(() => {
     const ids = new Set<string>()
-    if (activeWorktreeId) {
-      ids.add(activeWorktreeId)
-    }
     if (agentSendTargetWorktreeId) {
       ids.add(agentSendTargetWorktreeId)
     }
     return ids
-  }, [activeWorktreeId, agentSendTargetWorktreeId])
+  }, [agentSendTargetWorktreeId])
   const { filterState, hasFilters, clearFilters, revealWorkspaceFilters } =
     useSidebarWorktreeFilters()
   const sortedIds = useSidebarWorktreeSortOrder({ repoMap, sortBy })
