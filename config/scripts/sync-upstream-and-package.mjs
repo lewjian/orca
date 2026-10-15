@@ -15,7 +15,7 @@ const AUTO = process.argv.includes('--auto')
 
 // Why resolve from the script location: launchd runs with an arbitrary cwd, so
 // every repo-relative command is pinned to the fork checkout this script lives in.
-const repoRoot = join(dirname(import.meta.dirname), '..', '..')
+const repoRoot = join(import.meta.dirname, '..', '..')
 
 // Why: launchd provides a minimal PATH without node/pnpm; derive it from the
 // interpreter that is already running this script.
