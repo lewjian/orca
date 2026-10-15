@@ -1783,7 +1783,9 @@
         "defaultBranchUpdateFailed": "无法更新项目默认分支。再试一次。",
         "setLocation": "设置项目位置",
         "setLocationOnHost": "将项目位置设置为 {{host}}",
-        "setLocationTooltip": "选择一个文件夹或将此项目克隆到 {{host}} 上。"
+        "setLocationTooltip": "选择一个文件夹或将此项目克隆到 {{host}} 上。",
+        "crossRepoProjects": "跨仓项目",
+        "crossRepoHint": "每个项目会在同一个跨仓文件夹下创建同名工作区。"
       },
       "NewWorkspaceComposerModal": {
         "createWorktree": "创建工作树",
@@ -14436,6 +14438,13 @@
             "cloneFromUrl": "从 URL 克隆",
             "cloneFromUrlHelp": "将此存储库克隆到 {{host}} 上。",
             "saveLocation": "设置位置"
+          },
+          "CrossRepoProjectsPicker": {
+            "addProjects": "添加跨仓项目...",
+            "projectCount": "{count} 个跨仓项目",
+            "search": "搜索项目...",
+            "noMatches": "没有匹配的项目。",
+            "remove": "移除 {name}"
           }
         }
       },

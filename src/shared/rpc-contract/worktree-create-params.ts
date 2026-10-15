@@ -33,6 +33,9 @@ export const WorktreeCreate = z
     baseBranch: OptionalString,
     compareBaseRef: OptionalString,
     branchNameOverride: OptionalString,
+    /** Cross-repo group folder (`cross-repo-{name}`) scoping this worktree under the workspace
+     *  root; the worktree lands at `<root>/<group>/<repoName>/<name>`. */
+    crossRepoGroup: OptionalString,
     linkedIssue: TriStateLinkedIssue,
     linkedPR: TriStateLinkedIssue,
     linkedLinearIssue: z.string().optional(),

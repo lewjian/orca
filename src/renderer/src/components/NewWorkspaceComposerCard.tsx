@@ -329,6 +329,11 @@ export default function NewWorkspaceComposerCard(
           sshStatusLabel={sshStatusLabel}
           connectButtonLabel={connectButtonLabel}
           selectedProjectName={selectedProjectName}
+          showCrossRepoPicker={
+            Boolean(props.selectedRepoIsGit && props.selectedRepo?.kind !== 'folder') &&
+            (props.crossRepoOptions?.length ?? 0) > 0
+          }
+          onCrossRepoIdsChange={props.onCrossRepoIdsChange ?? (() => {})}
         />
         <NewWorkspaceComposerNameSection {...props} onNamePlainEnter={handleNamePlainEnter} />
         <NewWorkspaceComposerAgentSection

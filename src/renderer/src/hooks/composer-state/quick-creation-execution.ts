@@ -4,6 +4,7 @@ type QuickCreationExecutionInput = Pick<
   ComposerModel,
   | 'clearNewWorkspaceDraft'
   | 'createMultiple'
+  | 'crossRepoIds'
   | 'effectivePresetId'
   | 'ephemeralVmRecipes'
   | 'ephemeralVmsEnabled'
@@ -41,6 +42,9 @@ import { runBackgroundWorktreeCreation } from '@/lib/worktree-creation-flow'
 import { translate } from '@/i18n/i18n'
 import { resolveQuickCreateLinkedWorkItemPrompt } from '@/lib/linked-work-item-context'
 import { buildQuickComposerStartup } from './quick-startup-plan'
+import { registerCrossRepoGroupImport } from '@/lib/cross-repo-group-import'
+import { buildCrossRepoGroupName } from '../../../../shared/worktree/cross-repo-group'
+import { queueCrossRepoCreations } from './cross-repo-creation-queue'
 import { buildQuickCreationRequest, type QuickSubmitOptions } from './quick-creation-request'
 import type { PendingSmartGitHubSubmitResolution } from './source-selection-decisions'
 import { resolveAgentSessionLaunchRoute } from '@/lib/agent-session-launch-plan'
@@ -49,6 +53,7 @@ export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
   const {
     clearNewWorkspaceDraft,
     createMultiple,
+    crossRepoIds,
     effectivePresetId,
     ephemeralVmRecipes,
     ephemeralVmsEnabled,
@@ -173,6 +178,12 @@ export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
       }
 
       const promptDelivery = quickDraftPrompt ? 'draft' : 'auto-submit'
+      // Cross-repo group folder shared by every repo of this create; set only when extra repos
+      // beyond the main one were picked in the composer.
+      const crossRepoGroup =
+        crossRepoIds.filter((id) => id !== repoId).length > 0
+          ? buildCrossRepoGroupName(workspaceName)
+          : undefined
       // Why: the verdict is persisted on the request as data and re-entered once the worktree exists.
       const agentLaunchRoute = agent
         ? resolveAgentSessionLaunchRoute(useAppStore.getState(), {
@@ -218,6 +229,7 @@ export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
         linkedLinearIssueWorkspaceId,
         linkedLinearIssueOrganizationUrlKey,
         branchNameOverride: effectiveBranchNameOverride,
+        crossRepoGroup,
         parentWorktreeId,
         workspaceStatus: resolvedInitialWorkspaceStatus,
         linkedGitLabMR,
@@ -250,6 +262,24 @@ export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
         clearNewWorkspaceDraft()
       }
 
+      // Cross-repo group: queue the extra repos FIRST so the main repo's pending panel stays
+      // active and its workspace is the one that opens when creation settles.
+      if (crossRepoGroup) {
+        registerCrossRepoGroupImport(
+          crossRepoGroup,
+          crossRepoIds.filter((id) => id !== repoId).length + 1
+        )
+        queueCrossRepoCreations({
+          mainRepoId: repoId,
+          crossRepoIds,
+          workspaceName,
+          branchNameOverride: effectiveBranchNameOverride,
+          setupDecision: effectiveSetupDecision,
+          telemetrySource,
+          isSubmissionCancelled
+        })
+      }
+
       runBackgroundWorktreeCreation(request)
 
       if (createMultiple) {
@@ -261,6 +291,7 @@ export function useQuickCreationExecution(input: QuickCreationExecutionInput) {
     [
       clearNewWorkspaceDraft,
       createMultiple,
+      crossRepoIds,
       effectivePresetId,
       ephemeralVmRecipes,
       ephemeralVmsEnabled,

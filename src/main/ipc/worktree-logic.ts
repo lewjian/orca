@@ -104,13 +104,15 @@ export function computeWorktreePath(
   sanitizedName: string,
   repoPath: string,
   settings: WorktreePathSettings,
-  workspaceRoot?: string
+  workspaceRoot?: string,
+  crossRepoGroup?: string
 ): string {
   return computeWorktreePathFromWorkspaceRoot(
     sanitizedName,
     repoPath,
     workspaceRoot ?? computeWorkspaceRoot(repoPath, settings),
-    settings.nestWorkspaces
+    settings.nestWorkspaces,
+    crossRepoGroup
   )
 }
 
@@ -120,9 +122,16 @@ function computeWorktreePathFromWorkspaceRoot(
   sanitizedName: string,
   repoPath: string,
   workspaceRoot: string,
-  nestWorkspaces: boolean
+  nestWorkspaces: boolean,
+  crossRepoGroup?: string
 ): string {
   const pathOps = getRuntimePathOps(repoPath, workspaceRoot)
+  // Cross-repo groups always nest: same-named worktrees from different repos share the group
+  // folder, so the repo layer is what keeps their paths apart.
+  if (crossRepoGroup) {
+    const repoName = pathOps.basename(repoPath).replace(/\.git$/, '')
+    return pathOps.join(workspaceRoot, crossRepoGroup, repoName, sanitizedName)
+  }
   if (nestWorkspaces) {
     const repoName = pathOps.basename(repoPath).replace(/\.git$/, '')
     return pathOps.join(workspaceRoot, repoName, sanitizedName)
@@ -135,13 +144,15 @@ function computeWorktreePathFromWorkspaceRoot(
 export async function computeWorktreePathAsync(
   sanitizedName: string,
   repoPath: string,
-  settings: WorktreePathSettings
+  settings: WorktreePathSettings,
+  crossRepoGroup?: string
 ): Promise<string> {
   return computeWorktreePathFromWorkspaceRoot(
     sanitizedName,
     repoPath,
     await computeWorkspaceRootAsync(repoPath, settings),
-    settings.nestWorkspaces
+    settings.nestWorkspaces,
+    crossRepoGroup
   )
 }
 

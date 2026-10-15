@@ -166,6 +166,7 @@ export function createCreateWorktree(
       linkedAzureDevOpsPR,
       linkedGiteaPR,
       compareBaseRef,
+      crossRepoGroup: options?.crossRepoGroup,
       options
     }
     try {

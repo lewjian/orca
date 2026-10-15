@@ -16,6 +16,8 @@ export type CreateWorktreeCallOptions = {
   setupOnly?: boolean
   /** True only when `name` came from the creature-name generator; gates host-side retirement. */
   nameWasGenerated?: boolean
+  /** Cross-repo group folder (`cross-repo-{name}`); see CreateWorktreeArgs.crossRepoGroup. */
+  crossRepoGroup?: string
   displayNameKind?: CreateWorktreeArgs['displayNameKind']
   /** Parent picked in the composer. Sets sidebar nesting only; ignored if it no longer exists. */
   parentWorktreeId?: string
@@ -53,6 +55,7 @@ function sharedCreateFields(
     baseBranch: request.baseBranch,
     ...(request.compareBaseRef ? { compareBaseRef: request.compareBaseRef } : {}),
     ...(attempt.branchNameOverride ? { branchNameOverride: attempt.branchNameOverride } : {}),
+    ...(request.crossRepoGroup ? { crossRepoGroup: request.crossRepoGroup } : {}),
     setupDecision: request.setupDecision,
     ...(options?.setupOnly !== undefined ? { setupOnly: options.setupOnly } : {}),
     sparseCheckout: request.sparseCheckout,

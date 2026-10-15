@@ -54,6 +54,7 @@ export type ComposerCardSourceProps = Pick<
   | 'createError'
   | 'sparsePresets'
   | 'sparseSelectedPresetId'
+  | 'crossRepoIds'
 >
 
 export type ComposerCardActionProps = {
@@ -110,4 +111,7 @@ export type ComposerCardActionProps = {
   selectedRepoPath: string | null
   onSparseSelectPreset: ComposerModel['handleSparseSelectPreset']
   sparseControlsEnabled?: boolean
+  /** Repos eligible for cross-repo grouping (empty for folder/group targets). */
+  crossRepoOptions: ComposerModel['eligibleRepos']
+  onCrossRepoIdsChange: (ids: string[]) => void
 }

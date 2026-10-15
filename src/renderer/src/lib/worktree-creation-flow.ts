@@ -7,6 +7,7 @@ import {
 } from '@/lib/pending-worktree-creation'
 import { createBrowserUuid } from '@/lib/browser-uuid'
 import { executeWorktreeCreation } from '@/lib/worktree-creation-flow-execute'
+import { noteCrossRepoWorktreeSettled } from '@/lib/cross-repo-group-import'
 import {
   getInitialWorktreeCreationPhase,
   getWorktreeCreationIndeterminate
@@ -26,6 +27,12 @@ function startWorktreeCreation(creationId: string, request: WorktreeCreationRequ
   executeWorktreeCreation(creationId, request).catch((error: unknown) => {
     console.error('worktree create: unhandled failure', creationId, error)
     const store = useAppStore.getState()
+    if (request.crossRepoGroup) {
+      void noteCrossRepoWorktreeSettled(useAppStore, {
+        group: request.crossRepoGroup,
+        created: false
+      })
+    }
     if (!store.pendingWorktreeCreations[creationId]) {
       return
     }

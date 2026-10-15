@@ -46,6 +46,9 @@ export type ComposerAsyncModel = {
   setSparseDirectories: React.Dispatch<React.SetStateAction<string>>
   sparseSelectedPresetId: string | null
   setSparseSelectedPresetId: React.Dispatch<React.SetStateAction<string | null>>
+  /** Extra repos that get a same-named worktree under the shared `cross-repo-{name}` folder. */
+  crossRepoIds: string[]
+  setCrossRepoIds: React.Dispatch<React.SetStateAction<string[]>>
   linkPopoverOpen: boolean
   setLinkPopoverOpen: React.Dispatch<React.SetStateAction<boolean>>
   linkQuery: string

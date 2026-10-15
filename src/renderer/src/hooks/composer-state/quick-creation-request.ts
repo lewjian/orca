@@ -6,6 +6,7 @@ import type { TaskSourceContext } from '../../../../shared/task-source-context'
 import type { TuiAgent } from '../../../../shared/tui-agent'
 import type { GitPushTarget } from '../../../../shared/worktree/types'
 import type { SetupDecision } from '../../../../shared/worktree/create-types'
+import { buildCrossRepoGroupName } from '../../../../shared/worktree/cross-repo-group'
 import { toFolderWorkspaceLinkedTask } from '@/components/sidebar/folder-workspace-composer-helpers'
 
 export type QuickCreationRequestInput = {
@@ -35,6 +36,8 @@ export type QuickCreationRequestInput = {
   linkedLinearIssueWorkspaceId: string | undefined
   linkedLinearIssueOrganizationUrlKey: string | undefined
   branchNameOverride: string | undefined
+  /** Cross-repo group folder; set when extra repos share this workspace name. */
+  crossRepoGroup?: string
   parentWorktreeId: string | null
   workspaceStatus: WorktreeCreationRequest['workspaceStatus']
   linkedGitLabMR: number | null
@@ -56,6 +59,35 @@ export type QuickCreationRequestInput = {
 
 export type QuickSubmitOptions = {
   setupOnly?: boolean
+}
+
+/** Slim per-repo request for the extra repos of a cross-repo group: same name and branch,
+ *  but no linked items, agent startup, sparse checkout or other main-repo extras. */
+export function buildCrossRepoCreationRequest(input: {
+  repoId: string
+  workspaceName: string
+  branchNameOverride: string | undefined
+  setupDecision: SetupDecision
+  telemetrySource: WorktreeCreationRequest['telemetrySource']
+}): WorktreeCreationRequest {
+  return {
+    repoId: input.repoId,
+    worktreeCreateProgressMode: 'stepped',
+    name: input.workspaceName,
+    crossRepoGroup: buildCrossRepoGroupName(input.workspaceName),
+    ...(input.branchNameOverride ? { branchNameOverride: input.branchNameOverride } : {}),
+    setupDecision: input.setupDecision,
+    ...(input.telemetrySource ? { telemetrySource: input.telemetrySource } : {}),
+    agent: null,
+    pendingFirstAgentMessageRename: false,
+    note: '',
+    startupPlan: null,
+    quickPrompt: '',
+    promptDelivery: 'auto-submit',
+    quickTelemetry: null,
+    suppressTerminalFocusOnCompletion: true,
+    setupOnly: false
+  }
 }
 
 export function buildQuickCreationRequest(
@@ -100,6 +132,7 @@ export function buildQuickCreationRequest(
       ? { linkedLinearIssueOrganizationUrlKey: input.linkedLinearIssueOrganizationUrlKey }
       : {}),
     ...(input.branchNameOverride ? { branchNameOverride: input.branchNameOverride } : {}),
+    ...(input.crossRepoGroup ? { crossRepoGroup: input.crossRepoGroup } : {}),
     ...(input.parentWorktreeId ? { parentWorktreeId: input.parentWorktreeId } : {}),
     ...(input.workspaceStatus ? { workspaceStatus: input.workspaceStatus } : {}),
     ...(input.includeGitLabLinks && input.linkedGitLabMR != null

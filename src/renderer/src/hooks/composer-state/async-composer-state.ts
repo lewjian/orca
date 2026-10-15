@@ -116,6 +116,9 @@ export function useComposerAsyncState(input: ComposerAsyncStateInput) {
 
   const [sparseSelectedPresetId, setSparseSelectedPresetId] = useState<string | null>(null)
 
+  // Cross-repo extra repos: same-named worktrees grouped under one `cross-repo-{name}` folder.
+  const [crossRepoIds, setCrossRepoIds] = useState<string[]>([])
+
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false)
 
   const [linkQuery, setLinkQuery] = useState('')
@@ -246,6 +249,8 @@ export function useComposerAsyncState(input: ComposerAsyncStateInput) {
     setSparseDirectories,
     sparseSelectedPresetId,
     setSparseSelectedPresetId,
+    crossRepoIds,
+    setCrossRepoIds,
     linkPopoverOpen,
     setLinkPopoverOpen,
     linkQuery,

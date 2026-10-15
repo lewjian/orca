@@ -92,6 +92,8 @@ export type WorktreeCreationRequest = {
   linkedLinearIssueWorkspaceId?: string | null
   linkedLinearIssueOrganizationUrlKey?: string | null
   branchNameOverride?: string
+  /** Cross-repo group folder (`cross-repo-{name}`); see CreateWorktreeArgs.crossRepoGroup. */
+  crossRepoGroup?: string
   /** Parent picked in the composer's Advanced drawer. Sidebar nesting only, no git effect. */
   parentWorktreeId?: string
   workspaceStatus?: WorkspaceStatus

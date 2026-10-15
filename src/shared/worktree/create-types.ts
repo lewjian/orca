@@ -110,6 +110,10 @@ export type CreateWorktreeArgs = {
    *  name. Used when creating from an existing branch whose local branch name
    *  legitimately contains `/` while the worktree directory must not. */
   branchNameOverride?: string
+  /** Cross-repo group folder (`cross-repo-{name}`) scoping this worktree under the workspace
+   *  root; the worktree lands at `<root>/<group>/<repoName>/<name>`. Set by the composer when
+   *  the same workspace name is being created across several repos. */
+  crossRepoGroup?: string
   setupDecision?: SetupDecision
   /** Per-create choice; omitted callers use the execution host's saved default. */
   setupOnly?: boolean

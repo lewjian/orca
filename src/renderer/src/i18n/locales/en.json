@@ -1955,7 +1955,9 @@
         "addSshHostHint": "Use an existing machine over SSH",
         "addRemoteOrcaServer": "Add Remote Orca Server",
         "addRemoteOrcaServerHint": "Pair another Orca runtime",
-        "hostConnectionFailed": "Connection failed"
+        "hostConnectionFailed": "Connection failed",
+        "crossRepoProjects": "Cross-repo projects",
+        "crossRepoHint": "Each project gets a same-named workspace under one cross-repo folder."
       },
       "NewWorkspaceComposerModal": {
         "createWorktree": "Create worktree",
@@ -14666,6 +14668,13 @@
             "listLabel": "Run targets",
             "label": "Run on",
             "browse": "Browse run targets"
+          },
+          "CrossRepoProjectsPicker": {
+            "addProjects": "Add cross-repo projects...",
+            "projectCount": "{count} cross-repo projects",
+            "search": "Search projects...",
+            "noMatches": "No projects match your search.",
+            "remove": "Remove {name}"
           }
         }
       },

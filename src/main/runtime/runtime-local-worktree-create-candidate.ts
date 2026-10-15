@@ -9,6 +9,7 @@ import {
   sanitizeWorktreeName,
   type getWorktreePathSettings
 } from '../ipc/worktree-logic'
+import { normalizeCrossRepoGroup } from '../ipc/worktree-cross-repo-group'
 import { getBranchConflictKind } from '../git/repo'
 import {
   getBranchNameOverrideCandidate,
@@ -187,7 +188,13 @@ export async function resolveRuntimeLocalWorktreeCreateCandidate(args: {
       }
     }
     worktreePath = ensurePathWithinWorkspace(
-      computeWorktreePath(effectiveSanitizedName, args.repo.path, args.worktreePathSettings),
+      computeWorktreePath(
+        effectiveSanitizedName,
+        args.repo.path,
+        args.worktreePathSettings,
+        undefined,
+        normalizeCrossRepoGroup(args.request.crossRepoGroup)
+      ),
       args.workspaceRoot
     )
     // Why the pending check: Orca still owns this path until its background removal settles.

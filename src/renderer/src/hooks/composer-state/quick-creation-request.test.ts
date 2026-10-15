@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildQuickCreationRequest, type QuickCreationRequestInput } from './quick-creation-request'
+import {
+  buildQuickCreationRequest,
+  buildCrossRepoCreationRequest,
+  type QuickCreationRequestInput
+} from './quick-creation-request'
 
 function createInput(
   overrides: Partial<QuickCreationRequestInput> = {}
@@ -150,5 +154,30 @@ describe('quick composer creation request', () => {
       buildQuickCreationRequest(createInput({ setupOnly: true, agent: 'claude' }))
     ).not.toHaveProperty('setupOnly')
     expect(buildQuickCreationRequest(createInput())).toHaveProperty('setupOnly', false)
+  })
+})
+
+describe('buildCrossRepoCreationRequest', () => {
+  it('builds a slim request scoped to the shared cross-repo group', () => {
+    const request = buildCrossRepoCreationRequest({
+      repoId: 'repo-2',
+      workspaceName: 'feature-x',
+      branchNameOverride: 'feature/x',
+      setupDecision: 'run',
+      telemetrySource: undefined
+    })
+
+    expect(request.repoId).toBe('repo-2')
+    expect(request.name).toBe('feature-x')
+    expect(request.crossRepoGroup).toBe('cross-repo-feature-x')
+    expect(request.branchNameOverride).toBe('feature/x')
+    expect(request.setupDecision).toBe('run')
+    // Extra repos stay quiet: no agent, no focus steal, no linked main-repo extras.
+    expect(request.agent).toBeNull()
+    expect(request.suppressTerminalFocusOnCompletion).toBe(true)
+    expect(request.linkedWorkItem).toBeUndefined()
+    expect(request.startupPlan).toBeNull()
+    expect(request.sparseCheckout).toBeUndefined()
+    expect(request.baseBranch).toBeUndefined()
   })
 })

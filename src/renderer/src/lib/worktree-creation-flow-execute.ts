@@ -1,5 +1,4 @@
 import { prepareWorktreeCreationHooks } from '@/lib/worktree-creation-hook-preparation'
-import { toast } from 'sonner'
 import { useAppStore } from '@/store'
 import { activateAndRevealWorktree, type ActivateAndRevealResult } from '@/lib/worktree-activation'
 import { ensureWorktreeHasInitialTerminal } from '@/lib/worktree-initial-terminal-seeding'
@@ -9,10 +8,6 @@ import {
   prepareRequestForCreate
 } from '@/lib/ephemeral-vm-worktree-creation'
 import { getProvisionedRootCreateOptions } from '@/lib/provisioned-root-create-options'
-import {
-  formatWorkspaceCreateError,
-  getWorkspaceCreateErrorToastMessage
-} from '@/lib/workspace-create-error-format'
 import type { CreateWorktreeResult } from '../../../shared/worktree/create-types'
 import type { WorktreeCreationRequest } from '@/lib/pending-worktree-creation'
 import { createBrowserUuid } from '@/lib/browser-uuid'
@@ -22,7 +17,10 @@ import {
   launchStructuredWorktreeSession,
   type WorktreeCreationStructuredSessionResult
 } from '@/lib/worktree-creation-structured-session'
-import { completeWorktreeCreation } from '@/lib/worktree-creation-completion'
+import {
+  completeWorktreeCreation,
+  handleWorktreeCreateFailure
+} from '@/lib/worktree-creation-completion'
 import { showWorktreeCreationReadyToast } from '@/lib/worktree-creation-ready-toast'
 import { mountCreatedWorktreeStartupTabsInBackground } from '@/lib/worktree-creation-background-mount'
 import { ensureWebRuntimeWorktreeTerminalAfterWake } from '@/lib/web-runtime-worktree-terminal-after-wake'
@@ -118,7 +116,9 @@ export async function executeWorktreeCreation(
           ...(provisionedRoot ? { provisionedRoot } : {}),
           ...(preparedRequest.parentWorktreeId
             ? { parentWorktreeId: preparedRequest.parentWorktreeId }
-            : {})
+            : {}),
+          // Why: undefined is fine — both payload builders filter falsy crossRepoGroup out.
+          crossRepoGroup: preparedRequest.crossRepoGroup
         }
       )
   } catch (error) {
@@ -130,19 +130,9 @@ export async function executeWorktreeCreation(
     if (preparedRequest.ephemeralVmRuntimeId) {
       await cleanupEphemeralVmRuntimeForFailedCreate(preparedRequest)
     }
-    const message = getWorkspaceCreateErrorToastMessage(formatWorkspaceCreateError(error))
-    // Why: an error must stay on the same creation surface that owns the faux
-    // tab strip, rather than falling back to stale previous-workspace tabs.
-    useAppStore.getState().updatePendingWorktreeCreation(creationId, {
-      status: 'error',
-      error: message,
-      ...(preparedRequest.ephemeralVmRecipe ? { request } : {})
+    await handleWorktreeCreateFailure(creationId, preparedRequest, error, {
+      panelVisible: isPendingCreationSurfaceVisible(creationId)
     })
-    // Why: only toast when the panel isn't already showing this error (the user
-    // navigated away), so a visible failure isn't announced twice.
-    if (!isPendingCreationSurfaceVisible(creationId)) {
-      toast.error(message)
-    }
     return
   }
 

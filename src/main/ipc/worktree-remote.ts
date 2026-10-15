@@ -72,6 +72,7 @@ import {
   getWorktreePathSettings,
   mergeWorktree
 } from './worktree-logic'
+import { normalizeCrossRepoGroup } from './worktree-cross-repo-group'
 import { resolveCreatedWorktree } from './created-worktree-reconciliation'
 import type { BranchPrefixSettings } from '../../shared/branch-prefix'
 import { getRepoIdFromWorktreeId } from '../../shared/worktree/id'
@@ -1287,7 +1288,13 @@ async function performLocalWorktreeCreate(
       }
 
       worktreePath = ensurePathWithinWorkspace(
-        computeWorktreePath(effectiveSanitizedName, repo.path, worktreePathSettings, workspaceRoot),
+        computeWorktreePath(
+          effectiveSanitizedName,
+          repo.path,
+          worktreePathSettings,
+          workspaceRoot,
+          normalizeCrossRepoGroup(args.crossRepoGroup)
+        ),
         workspaceRoot
       )
       // Why the pending check: Git may already have deleted the directory while Orca still owns

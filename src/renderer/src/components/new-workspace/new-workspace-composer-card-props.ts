@@ -56,6 +56,10 @@ export type NewWorkspaceComposerCardProps = {
   selectedEphemeralVmRecipeId?: string | null
   onEphemeralVmRecipeChange?: (recipeId: string | null) => void
   ephemeralVmRecipeError?: string | null
+  /** Repos eligible for cross-repo grouping; empty hides the picker. */
+  crossRepoOptions?: readonly RepoOption[]
+  crossRepoIds?: readonly string[]
+  onCrossRepoIdsChange?: (ids: string[]) => void
   repoBackedSearchRepos?: readonly RepoOption[]
   repoBackedSourcesDisabled?: boolean
   allowSmartNameAddProject?: boolean

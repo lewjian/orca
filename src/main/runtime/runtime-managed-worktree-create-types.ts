@@ -23,6 +23,8 @@ export type RuntimeManagedWorktreeCreateArgs = {
   baseBranch?: string
   compareBaseRef?: string
   branchNameOverride?: string
+  /** Cross-repo group folder (`cross-repo-{name}`); see CreateWorktreeArgs.crossRepoGroup. */
+  crossRepoGroup?: string
   linkedIssue?: number | null
   linkedPR?: number | null
   linkedLinearIssue?: string

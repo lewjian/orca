@@ -3,14 +3,19 @@ import { FolderPlus, LoaderCircle, PlugZap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import ProjectCombobox from '@/components/new-workspace/ProjectCombobox'
+import CrossRepoProjectsPicker from '@/components/new-workspace/CrossRepoProjectsPicker'
 import RunTargetCombobox from '@/components/new-workspace/RunTargetCombobox'
 import { translate } from '@/i18n/i18n'
-import type {
-  EphemeralVmRecipeOption,
-  NeedsProjectHostOption,
-  NewWorkspaceComposerCardProps
+import {
+  EMPTY_PROJECT_OPTIONS,
+  type EphemeralVmRecipeOption,
+  type NeedsProjectHostOption,
+  type NewWorkspaceComposerCardProps,
+  type RepoOption
 } from './new-workspace-composer-card-props'
-import { EMPTY_PROJECT_OPTIONS } from './new-workspace-composer-card-props'
+
+const EMPTY_CROSS_REPO_IDS: readonly string[] = []
+const EMPTY_CROSS_REPO_OPTIONS: readonly RepoOption[] = []
 
 type NewWorkspaceComposerProjectSectionProps = Pick<
   NewWorkspaceComposerCardProps,
@@ -31,6 +36,8 @@ type NewWorkspaceComposerProjectSectionProps = Pick<
   | 'onEphemeralVmRecipeChange'
   | 'selectedEphemeralVmRecipeId'
   | 'ephemeralVmRecipeError'
+  | 'crossRepoIds'
+  | 'crossRepoOptions'
 > & {
   disabled?: boolean
   projectDescriptionId: string
@@ -47,6 +54,8 @@ type NewWorkspaceComposerProjectSectionProps = Pick<
   sshStatusLabel: string
   connectButtonLabel: string
   selectedProjectName: string
+  showCrossRepoPicker: boolean
+  onCrossRepoIdsChange: (ids: string[]) => void
 }
 
 export function NewWorkspaceComposerProjectSection({
@@ -81,7 +90,11 @@ export function NewWorkspaceComposerProjectSection({
   onConnectSelectedRepo,
   sshStatusLabel,
   connectButtonLabel,
-  selectedProjectName
+  selectedProjectName,
+  crossRepoIds = EMPTY_CROSS_REPO_IDS,
+  crossRepoOptions = EMPTY_CROSS_REPO_OPTIONS,
+  showCrossRepoPicker = false,
+  onCrossRepoIdsChange
 }: NewWorkspaceComposerProjectSectionProps): React.JSX.Element {
   return (
     <fieldset disabled={disabled} className="space-y-1">
@@ -144,6 +157,27 @@ export function NewWorkspaceComposerProjectSection({
           ) : null}
         </div>
       </div>
+      {showCrossRepoPicker ? (
+        <div className="space-y-1 pt-3">
+          <label className="block min-w-0 truncate text-xs font-medium text-muted-foreground">
+            {translate(
+              'auto.components.NewWorkspaceComposerCard.crossRepoProjects',
+              'Cross-repo projects'
+            )}
+          </label>
+          <CrossRepoProjectsPicker
+            repos={crossRepoOptions}
+            selectedIds={crossRepoIds}
+            onSelectedIdsChange={onCrossRepoIdsChange}
+          />
+          <p className="text-[11px] text-muted-foreground">
+            {translate(
+              'auto.components.NewWorkspaceComposerCard.crossRepoHint',
+              'Each project gets a same-named workspace under one cross-repo folder.'
+            )}
+          </p>
+        </div>
+      ) : null}
       {shouldShowRunTargetPicker ? (
         <div className="space-y-1 pt-3">
           <label className="block min-w-0 truncate text-xs font-medium text-muted-foreground">

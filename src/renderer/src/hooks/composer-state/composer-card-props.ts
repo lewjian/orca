@@ -18,6 +18,7 @@ export function buildComposerCardProps(state: ComposerModel) {
     creating,
     detectedAgentIds,
     eligibleRepos,
+    crossRepoIds,
     ephemeralVmRecipeError,
     ephemeralVmRecipes,
     ephemeralVmsEnabled,
@@ -93,6 +94,7 @@ export function buildComposerCardProps(state: ComposerModel) {
     setAgentPrompt,
     setAttachmentPaths,
     setCreateMultiple,
+    setCrossRepoIds,
     setLinkQuery,
     setNote,
     setParentWorktreeId,
@@ -256,7 +258,13 @@ export function buildComposerCardProps(state: ComposerModel) {
     onSparseSelectPreset: isProjectGroupTarget ? () => {} : handleSparseSelectPreset,
     branchesEnabled: !isProjectGroupTarget,
     setupControlsEnabled: !isProjectGroupTarget,
-    sparseControlsEnabled: !isProjectGroupTarget
+    sparseControlsEnabled: !isProjectGroupTarget,
+    crossRepoIds: isProjectGroupTarget ? [] : crossRepoIds.filter((id) => id !== repoId),
+    crossRepoOptions:
+      isProjectGroupTarget || !selectedRepoIsGit
+        ? []
+        : eligibleRepos.filter((repo) => repo.kind !== 'folder'),
+    onCrossRepoIdsChange: setCrossRepoIds
   }
 
   return { cardProps, createDisabled }

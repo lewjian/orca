@@ -24,6 +24,7 @@ import {
   isOrphanedWorktreeError,
   areWorktreePathsEqual
 } from './worktree-logic'
+import { normalizeCrossRepoGroup } from './worktree-cross-repo-group'
 
 describe('sanitizeWorktreeName', () => {
   it('replaces spaces with hyphens', () => {
@@ -340,6 +341,35 @@ describe('computeValidatedBranchName', () => {
 })
 
 describe('computeWorktreePath', () => {
+  it('scopes cross-repo worktrees under the group and repo folder regardless of nesting', () => {
+    expect(
+      computeWorktreePath(
+        'feature',
+        '/repos/my-project',
+        { nestWorkspaces: true, workspaceDir: '/workspaces' },
+        undefined,
+        'cross-repo-feature'
+      )
+    ).toBe(posix.join('/workspaces', 'cross-repo-feature', 'my-project', 'feature'))
+    expect(
+      computeWorktreePath(
+        'feature',
+        '/repos/my-project',
+        { nestWorkspaces: false, workspaceDir: '/workspaces' },
+        undefined,
+        'cross-repo-feature'
+      )
+    ).toBe(posix.join('/workspaces', 'cross-repo-feature', 'my-project', 'feature'))
+  })
+
+  it('keeps two same-named cross-repo worktrees apart by repo folder', () => {
+    const settings = { nestWorkspaces: false, workspaceDir: '/workspaces' }
+    const group = 'cross-repo-feature'
+    expect(computeWorktreePath('feature', '/repos/alpha', settings, undefined, group)).not.toBe(
+      computeWorktreePath('feature', '/repos/beta', settings, undefined, group)
+    )
+  })
+
   it('nests under repo name when nestWorkspaces is true', () => {
     expect(
       computeWorktreePath('feature', '/repos/my-project', {
@@ -794,5 +824,23 @@ describe('isOrphanCompatiblePreflightError', () => {
     })
 
     expect(isOrphanCompatiblePreflightError(error)).toBe(false)
+  })
+})
+
+describe('normalizeCrossRepoGroup', () => {
+  it('passes undefined through', () => {
+    expect(normalizeCrossRepoGroup(undefined)).toBeUndefined()
+  })
+
+  it('keeps a well-formed group name', () => {
+    expect(normalizeCrossRepoGroup('cross-repo-feature-x')).toBe('cross-repo-feature-x')
+  })
+
+  it('rejects names without the cross-repo prefix', () => {
+    expect(() => normalizeCrossRepoGroup('feature-x')).toThrow('cross-repo-')
+  })
+
+  it('resanitizes hostile group names into a safe slug', () => {
+    expect(normalizeCrossRepoGroup('cross-repo-../../etc')).toBe('cross-repo-.-.-etc')
   })
 })
