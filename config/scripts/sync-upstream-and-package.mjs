@@ -150,8 +150,12 @@ function collectRelatedTestFiles(changedFiles) {
 }
 
 function packageMac() {
-  step('Packaging mac build (pnpm build:mac)')
-  run('pnpm', ['build:mac'])
+  step('Packaging mac build (pnpm build:mac, host architecture only)')
+  // Why: the local over-install runs on this machine, so the dual-arch default
+  // (which additionally needs the x64 native variant installs) is pure waste here.
+  run('pnpm', ['build:mac'], {
+    env: { ...process.env, ORCA_MAC_ARCH: process.arch }
+  })
   const dist = 'dist'
   const dmgs = existsSync(dist) ? readdirSync(dist).filter((name) => name.endsWith('.dmg')) : []
   if (dmgs.length === 0) {
