@@ -104,6 +104,11 @@ const devChannelRepo = isHourlyChannel
     : isAdhocChannel
       ? 'orca-adhoc'
       : null
+// Why: ORCA_MAC_ARCH (arm64|x64) narrows local over-install builds to the host
+// architecture so the x64 native variant installs are not required.
+const localMacArch = ['arm64', 'x64'].includes(process.env.ORCA_MAC_ARCH)
+  ? process.env.ORCA_MAC_ARCH
+  : null
 const appId = 'com.stablyai.orca'
 const featureWallResources = {
   from: 'resources/onboarding/feature-wall',
@@ -669,11 +674,13 @@ module.exports = {
     target: [
       {
         target: 'dmg',
-        arch: ['x64', 'arm64']
+        // Why: ORCA_MAC_ARCH lets local over-install builds ship just the host
+        // architecture, which skips the x64 native variant installs entirely.
+        arch: localMacArch ? [localMacArch] : ['x64', 'arm64']
       },
       {
         target: 'zip',
-        arch: ['x64', 'arm64']
+        arch: localMacArch ? [localMacArch] : ['x64', 'arm64']
       }
     ]
   },
