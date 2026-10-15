@@ -71,7 +71,10 @@ export function buildRows(
   folderWorkspaces: readonly FolderWorkspace[] = [],
   hostLabelById?: ReadonlyMap<string, string>,
   defaultHostId: ExecutionHostId = LOCAL_EXECUTION_HOST_ID,
-  pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy = getPinnedWorktreeDisplayPolicy(settings)
+  pinnedDisplayPolicy: PinnedWorktreeDisplayPolicy = getPinnedWorktreeDisplayPolicy(settings),
+  overflowExpandedKeys: ReadonlySet<string> = new Set<string>(),
+  /** Worktrees (agent-send target, active workspace) whose section never collapses. */
+  forceOpenWorktreeIds: ReadonlySet<string> = new Set<string>()
 ): Row[] {
   const result: Row[] = []
   const projectIndex = buildProjectGroupingIndex(projectGrouping)
@@ -230,7 +233,9 @@ export function buildRows(
     lineageById,
     worktreeMap,
     nestLineage,
-    cyclicLineageIds
+    cyclicLineageIds,
+    overflowExpandedKeys,
+    forceOpenWorktreeIds
   }
 
   if (groupBy !== 'repo' || projectGroups.length === 0) {

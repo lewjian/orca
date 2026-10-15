@@ -87,6 +87,8 @@ const WorktreeList = React.memo(function WorktreeList({
   const clearPendingRevealSidebarRow = useAppStore((s) => s.clearPendingRevealSidebarRow)
   const collapsedGroups = useAppStore((s) => s.collapsedGroups)
   const toggleGroup = useAppStore((s) => s.toggleCollapsedGroup)
+  const expandedWorktreeOverflows = useAppStore((s) => s.expandedWorktreeOverflows)
+  const toggleWorktreeOverflow = useAppStore((s) => s.toggleWorktreeOverflow)
   const projectGroups = useAppStore((s) => s.projectGroups ?? EMPTY_PROJECT_GROUPS)
   const folderWorkspaces = useAppStore((s) => s.folderWorkspaces)
   const settings = useAppStore((s) => s.settings)
@@ -106,6 +108,17 @@ const WorktreeList = React.memo(function WorktreeList({
   )
 
   const agentSendTargetWorktreeId = useAgentSendTargetWorktreeId()
+  // The workspace being worked in (and any pending agent-send target) never collapses away.
+  const forceOpenWorktreeIds = useMemo(() => {
+    const ids = new Set<string>()
+    if (activeWorktreeId) {
+      ids.add(activeWorktreeId)
+    }
+    if (agentSendTargetWorktreeId) {
+      ids.add(agentSendTargetWorktreeId)
+    }
+    return ids
+  }, [activeWorktreeId, agentSendTargetWorktreeId])
   const { filterState, hasFilters, clearFilters, revealWorkspaceFilters } =
     useSidebarWorktreeFilters()
   const sortedIds = useSidebarWorktreeSortOrder({ repoMap, sortBy })
@@ -178,7 +191,9 @@ const WorktreeList = React.memo(function WorktreeList({
     newExternalWorktreesInboxByRepo: externalWorktreeCards.newExternalWorktreesInboxByRepo,
     filterRepoIds: filterState.filterRepoIds,
     visibleWorkspaceHostIds: filterState.visibleWorkspaceHostIds,
-    workspaceHostScope: filterState.workspaceHostScope
+    workspaceHostScope: filterState.workspaceHostScope,
+    expandedOverflowKeys: expandedWorktreeOverflows,
+    forceOpenWorktreeIds: forceOpenWorktreeIds
   })
   const selection = useSidebarWorktreeSelection({
     sectionRows: rowModel.sectionRows,
@@ -305,6 +320,7 @@ const WorktreeList = React.memo(function WorktreeList({
         handleOpenWorktreeVisibility={handleOpenWorktreeVisibility}
         handleShowImportedWorktrees={externalWorktreeCards.handleShowImportedWorktrees}
         handleKeepImportedWorktreesHidden={externalWorktreeCards.handleKeepImportedWorktreesHidden}
+        onToggleWorktreeOverflow={toggleWorktreeOverflow}
         importedWorktreeCardActionState={externalWorktreeCards.importedWorktreeCardActionState}
         handleOpenSuppressExternalWorktreeInbox={
           externalWorktreeCards.handleOpenSuppressExternalWorktreeInbox

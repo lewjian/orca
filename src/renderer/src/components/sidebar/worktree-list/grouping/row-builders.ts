@@ -4,6 +4,8 @@ import type { Worktree } from '../../../../../../shared/worktree/types'
 import { getWorktreeHostIdentity } from '../../../../../../shared/worktree/host-qualified-identity'
 import { getSidebarLineageParent } from '../../worktree-lineage-projection'
 import { getWorktreeLineageGroupKey } from './group-keys'
+import { buildOverflowToggleRow } from './build-overflow-toggle-row'
+import { sliceLineageOverflow } from './lineage-overflow-slice'
 import type { NoticeHostContext } from './host-labels'
 import type { RenderableFolderWorkspace } from './folder-workspace-lanes'
 import type {
@@ -110,6 +112,12 @@ export function appendWorktreeRows(
     hostContextLabelByRepoId?: ReadonlyMap<string, string>
     hostContextLabelByWorktreeIdentity?: ReadonlyMap<string, string>
     cyclicLineageIds: ReadonlySet<string>
+    /** Keys from expandedWorktreeOverflows: sections the user (or a reveal) forced open. */
+    overflowExpandedKeys?: ReadonlySet<string>
+    /** Worktrees whose section never collapses (active workspace, agent-send target). */
+    forceOpenWorktreeIds?: ReadonlySet<string>
+    /** Cap before the rest collapse; 0/undefined disables the overflow toggle. */
+    overflowVisibleLimit?: number
   }
 ): void {
   const {
@@ -119,10 +127,20 @@ export function appendWorktreeRows(
     sectionKey,
     hostContextLabelByRepoId,
     hostContextLabelByWorktreeIdentity,
-    cyclicLineageIds
+    cyclicLineageIds,
+    overflowExpandedKeys,
+    forceOpenWorktreeIds,
+    overflowVisibleLimit
   } = options
   if (!nestLineage) {
-    for (const worktree of worktrees) {
+    const overflowLimit = overflowVisibleLimit ?? 0
+    const overLimit =
+      overflowLimit > 0 &&
+      worktrees.length > overflowLimit &&
+      !worktrees.some((worktree) => forceOpenWorktreeIds?.has(worktree.id))
+    const collapsed = overLimit && !overflowExpandedKeys?.has(sectionKey)
+    const visibleWorktrees = collapsed ? worktrees.slice(0, overflowLimit) : worktrees
+    for (const worktree of visibleWorktrees) {
       result.push(
         buildWorktreeRow(worktree, repoMap, {
           rowKey: `${sectionKey}:${getWorktreeHostIdentity(worktree)}`,
@@ -136,6 +154,16 @@ export function appendWorktreeRows(
           hostContextLabel:
             hostContextLabelByWorktreeIdentity?.get(getWorktreeHostIdentity(worktree)) ??
             hostContextLabelByRepoId?.get(worktree.repoId)
+        })
+      )
+    }
+    if (overLimit) {
+      result.push(
+        buildOverflowToggleRow({
+          sectionKey,
+          repo: repoMap.get(worktrees[0]?.repoId ?? ''),
+          hiddenCount: worktrees.length - overflowLimit,
+          expanded: !collapsed
         })
       )
     }
@@ -227,10 +255,21 @@ export function appendWorktreeRows(
   const roots = worktrees.filter(
     (worktree) => !childIdentities.has(getWorktreeHostIdentity(worktree))
   )
-  for (const [index, worktree] of roots.entries()) {
-    emit(worktree, 0, [], index === roots.length - 1)
+  // Overflow collapse for lineage sections: keep the first N root trees (their
+  // descendants go with them) and end with a toggle row, same as the flat path.
+  const lineageOverflow = sliceLineageOverflow({
+    worktrees,
+    roots,
+    childrenByParentIdentity,
+    limit: overflowVisibleLimit ?? 0,
+    expanded: overflowExpandedKeys?.has(sectionKey) ?? false,
+    forceOpenWorktreeIds
+  })
+  const emittedRoots = lineageOverflow.emittedRoots
+  for (const [index, worktree] of emittedRoots.entries()) {
+    emit(worktree, 0, [], lineageOverflow.collapsed ? false : index === emittedRoots.length - 1)
   }
-  if (roots.length === 0) {
+  if (emittedRoots.length === 0) {
     for (const worktree of worktrees) {
       if (!emitted.has(getWorktreeHostIdentity(worktree))) {
         // Why: malformed cyclic lineage should not hide every participant.
@@ -238,6 +277,16 @@ export function appendWorktreeRows(
         emit(worktree, 0, [], true)
       }
     }
+  }
+  if (lineageOverflow.showToggle) {
+    result.push(
+      buildOverflowToggleRow({
+        sectionKey,
+        repo: repoMap.get(worktrees[0]?.repoId ?? ''),
+        hiddenCount: lineageOverflow.hiddenCount,
+        expanded: !lineageOverflow.collapsed
+      })
+    )
   }
 }
 

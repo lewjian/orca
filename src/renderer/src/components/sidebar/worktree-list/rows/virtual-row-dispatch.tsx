@@ -23,6 +23,7 @@ import {
   renderNewExternalWorktreesInboxVirtualRow,
   renderPendingCreationVirtualRow
 } from './notice-rows'
+import { renderOverflowToggleVirtualRow } from './overflow-toggle-row'
 import {
   renderWorktreeItemRow,
   renderWorktreeLineageDescendants,
@@ -51,6 +52,7 @@ export type WorktreeVirtualRowContext = {
   newExternalWorktreeInboxActionState: ReadonlyMap<string, NewExternalWorktreesInboxActionState>
   onShowImportedWorktrees: (projectId: string) => void
   onKeepImportedWorktreesHidden: (projectId: string) => void
+  onToggleWorktreeOverflow: (sectionKey: string) => void
   onOpenWorktreeVisibility: (
     repo: Parameters<SectionHeaderRowContext['projectActions']['onOpenWorktreeVisibility']>[0]
   ) => void
@@ -203,6 +205,15 @@ export function renderWorktreeVirtualRow(
       row,
       vItem,
       measureVirtualRowElement: ctx.measureVirtualRowElement
+    })
+  }
+
+  if (row.type === 'overflow-toggle') {
+    return renderOverflowToggleVirtualRow({
+      row,
+      vItem,
+      measureVirtualRowElement: ctx.measureVirtualRowElement,
+      onToggle: ctx.onToggleWorktreeOverflow
     })
   }
 

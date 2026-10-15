@@ -6799,6 +6799,10 @@
           "outsideDistro": "Pick a folder inside {{value0}}.",
           "underDistro": "This host can only add folders under \\\\wsl.localhost\\{{value0}}.",
           "windowsDrive": "Folders on a Windows drive stay on this computer. Choose this computer as the host to add one."
+        },
+        "worktreeOverflow": {
+          "showLess": "Show less",
+          "showMore": "Show {count} more"
         }
       },
       "shared": {

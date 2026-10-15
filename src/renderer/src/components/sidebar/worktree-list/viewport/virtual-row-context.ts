@@ -70,6 +70,7 @@ export function buildWorktreeVirtualRowContext(args: BuildArgs): WorktreeVirtual
     newExternalWorktreeInboxActionState: props.newExternalWorktreeInboxActionState,
     onShowImportedWorktrees: props.handleShowImportedWorktrees,
     onKeepImportedWorktreesHidden: props.handleKeepImportedWorktreesHidden,
+    onToggleWorktreeOverflow: props.onToggleWorktreeOverflow,
     onOpenWorktreeVisibility: props.handleOpenWorktreeVisibility,
     onOpenSuppressExternalWorktreeInbox: props.handleOpenSuppressExternalWorktreeInbox,
     onWorkspaceStatusDragOver: statusDrag.handleWorkspaceStatusDragOver,

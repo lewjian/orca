@@ -40,6 +40,7 @@ export type VirtualizedWorktreeViewportProps = {
   handleOpenWorktreeVisibility: (repo: Repo) => void
   handleShowImportedWorktrees: (projectId: string) => void
   handleKeepImportedWorktreesHidden: (projectId: string) => void
+  onToggleWorktreeOverflow: (sectionKey: string) => void
   importedWorktreeCardActionState: ReadonlyMap<string, ImportedWorktreeCardActionState>
   handleOpenSuppressExternalWorktreeInbox: (projectId: string) => void
   newExternalWorktreeInboxActionState: ReadonlyMap<string, NewExternalWorktreesInboxActionState>

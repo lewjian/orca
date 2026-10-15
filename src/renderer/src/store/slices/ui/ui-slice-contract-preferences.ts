@@ -89,6 +89,10 @@ export type UISlicePreferences = {
   setAgentsGroupBy: (v: ActivityGroupBy) => void
   collapsedGroups: Set<string>
   toggleCollapsedGroup: (key: string) => void
+  /** Per-project worktree overflow sections the user forced open; session-scoped on purpose —
+   *  a fresh session collapses long lists again. */
+  expandedWorktreeOverflows: ReadonlySet<string>
+  toggleWorktreeOverflow: (sectionKey: string) => void
   worktreeCardProperties: WorktreeCardProperty[]
   _worktreeCardModeDefaulted: boolean
   setWorktreeCardMode: (mode: WorktreeCardMode) => void

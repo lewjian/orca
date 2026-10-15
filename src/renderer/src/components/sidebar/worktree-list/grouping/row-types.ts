@@ -8,6 +8,9 @@ import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 export type WorktreeGroupBy = 'none' | 'workspace-status' | 'repo' | 'pr-status'
 export type PinnedWorktreeDisplayPolicy = 'single-location' | 'duplicate-in-groups'
 
+/** Per-project worktrees shown before the rest collapse behind a show-more row. */
+export const WORKTREE_GROUP_VISIBLE_LIMIT = 3
+
 export function getPinnedWorktreeDisplayPolicy(
   settings?: { showPinnedWorktreesInGroups?: boolean } | null
 ): PinnedWorktreeDisplayPolicy {
@@ -94,6 +97,16 @@ export type FolderWorkspaceRow = {
   groupDepth: number
 }
 
+/** Collapsed overflow of a project's worktree list; clicking toggles the section open. */
+export type OverflowToggleRow = {
+  type: 'overflow-toggle'
+  key: string
+  sectionKey: string
+  repo: Repo | undefined
+  hiddenCount: number
+  expanded: boolean
+}
+
 /** Minimal shape buildRows needs for an in-flight create. Deliberately not the
  *  full PendingWorktreeCreation: row identity depends only on which creates
  *  exist and their repo, so callers can subscribe on this stable shape and keep
@@ -107,3 +120,4 @@ export type Row =
   | NewExternalWorktreesInboxRow
   | PendingCreationRow
   | FolderWorkspaceRow
+  | OverflowToggleRow

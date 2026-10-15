@@ -8,6 +8,7 @@ import {
 } from '../../workspace-status'
 import { PROJECT_GROUP_META, PR_GROUP_META } from './group-keys'
 import type { PRGroupKey } from './group-keys'
+import { WORKTREE_GROUP_VISIBLE_LIMIT } from './row-types'
 import type { NoticeHostContext } from './host-labels'
 import {
   getLaneHostWorktreeCounts,
@@ -51,6 +52,10 @@ export type SectionAppendContext = {
   worktreeMap: Map<string, Worktree>
   nestLineage: boolean
   cyclicLineageIds: ReadonlySet<string>
+  /** Sections forced open past the per-project worktree overflow cap. */
+  overflowExpandedKeys?: ReadonlySet<string>
+  /** Worktrees whose section never collapses (active workspace, agent-send target). */
+  forceOpenWorktreeIds?: ReadonlySet<string>
 }
 
 export function appendOrderedGroups(
@@ -209,7 +214,10 @@ export function appendOrderedGroups(
         sectionKey: key,
         hostContextLabelByRepoId,
         hostContextLabelByWorktreeIdentity,
-        cyclicLineageIds
+        cyclicLineageIds,
+        overflowExpandedKeys: ctx.overflowExpandedKeys,
+        forceOpenWorktreeIds: ctx.forceOpenWorktreeIds,
+        overflowVisibleLimit: groupBy === 'repo' ? WORKTREE_GROUP_VISIBLE_LIMIT : 0
       })
       for (const pair of folderPairs) {
         result.push(buildFolderWorkspaceRow(pair, projectGroupDepth))

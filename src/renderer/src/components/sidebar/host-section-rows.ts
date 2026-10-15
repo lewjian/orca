@@ -63,6 +63,8 @@ function getRowHostId(row: Row, defaultHostId: ExecutionHostId): ExecutionHostId
     case 'imported-worktrees-card':
     case 'new-external-worktrees-inbox':
       return getRepoHostId(row.repo, defaultHostId)
+    case 'overflow-toggle':
+      return getRepoHostId(row.repo, defaultHostId)
     case 'folder-workspace':
       return getFolderWorkspaceHostId(row.folderWorkspace, row.projectGroup, defaultHostId)
     case 'header':

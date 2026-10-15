@@ -28,5 +28,8 @@ export function getRenderRowKey(row: RenderRow): string {
   if (row.type === 'folder-workspace') {
     return `folder-workspace:${getFolderWorkspaceHostIdentity(row.folderWorkspace)}`
   }
+  if (row.type === 'overflow-toggle') {
+    return `overflow:${row.sectionKey}`
+  }
   return `wt:${row.rowKey}`
 }

@@ -6572,6 +6572,10 @@
           "outsideDistro": "请选择 {{value0}} 内的文件夹。",
           "underDistro": "此主机只能添加 \\\\wsl.localhost\\{{value0}} 下的文件夹。",
           "windowsDrive": "Windows 驱动器上的文件夹保留在此计算机上。请选择此计算机作为主机以添加。"
+        },
+        "worktreeOverflow": {
+          "showMore": "显示另外 {count} 个",
+          "showLess": "收起"
         }
       },
       "shared": {

@@ -173,6 +173,18 @@ export function createUiPreferenceActions(set: UISliceSet, get: UISliceGet): Par
         return { collapsedGroups: next }
       }),
 
+    expandedWorktreeOverflows: new Set<string>(),
+    toggleWorktreeOverflow: (sectionKey) =>
+      set((s) => {
+        const next = new Set(s.expandedWorktreeOverflows)
+        if (next.has(sectionKey)) {
+          next.delete(sectionKey)
+        } else {
+          next.add(sectionKey)
+        }
+        return { expandedWorktreeOverflows: next }
+      }),
+
     worktreeCardProperties: [...DEFAULT_WORKTREE_CARD_PROPERTIES],
     _worktreeCardModeDefaulted: true,
     setWorktreeCardMode: (mode) => {

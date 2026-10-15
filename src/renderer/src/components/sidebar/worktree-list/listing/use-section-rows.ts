@@ -46,6 +46,8 @@ type SectionRowsArgs = {
   filterRepoIds: readonly string[]
   visibleWorkspaceHostIds: readonly ExecutionHostId[] | null
   workspaceHostScope: AppState['workspaceHostScope']
+  expandedOverflowKeys?: ReadonlySet<string>
+  forceOpenWorktreeIds?: ReadonlySet<string>
 }
 
 function collectRenderedSidebarRowKeys(sectionRows: ReturnType<typeof addHostSectionRows>) {
@@ -186,7 +188,9 @@ export function useSidebarSectionRows(args: SectionRowsArgs) {
         args.visibleFolderWorkspacesForRows,
         hostLabelById,
         defaultHostId,
-        args.pinnedDisplayPolicy
+        args.pinnedDisplayPolicy,
+        args.expandedOverflowKeys,
+        args.forceOpenWorktreeIds
       ),
     [
       args.groupBy,
@@ -209,7 +213,9 @@ export function useSidebarSectionRows(args: SectionRowsArgs) {
       args.newExternalWorktreesInboxByRepo,
       pendingCreations,
       hostLabelById,
-      args.pinnedDisplayPolicy
+      args.pinnedDisplayPolicy,
+      args.expandedOverflowKeys,
+      args.forceOpenWorktreeIds
     ]
   )
   const orderedHostOptions = useMemo(
