@@ -2,7 +2,8 @@
 // One-command fork maintenance: merge upstream main, gate on typecheck + tests,
 // then package a local mac build for over-install. Re-run after resolving merge
 // conflicts — the script detects an in-progress merge and continues from there.
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
+import { closeSync, openSync } from 'node:fs'
 import { existsSync, readdirSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 
@@ -214,11 +215,35 @@ function packageMac() {
     return
   }
   step('Packaging mac build (pnpm build:mac, host architecture only)')
-  // Why: the local over-install runs on this machine, so the dual-arch default
-  // (which additionally needs the x64 native variant installs) is pure waste here.
-  run('pnpm', ['build:mac'], {
-    env: { ...process.env, ORCA_MAC_ARCH: process.arch }
+  // Why detached: under launchd an attached multi-minute electron-builder chain was
+  // observed dying with exit null; a detached process outlives the job's process group.
+  const buildLog = '/tmp/orca-fork-build.log'
+  const buildOut = openSync(buildLog, 'w')
+  const build = spawn('pnpm', ['build:mac'], {
+    cwd: repoRoot,
+    detached: true,
+    stdio: ['ignore', buildOut, buildOut],
+    env: { ...launchEnv, ORCA_MAC_ARCH: process.arch }
   })
+  closeSync(buildOut)
+  build.unref()
+  // Why: unattended builds get 45 minutes; a stuck builder should not run forever.
+  for (let waited = 0; waited < 45 * 60; waited += 30) {
+    spawnSync('sleep', ['30'])
+    let alive = true
+    try {
+      process.kill(build.pid, 0)
+    } catch {
+      alive = false
+    }
+    if (!alive) {
+      break
+    }
+  }
+  const fresh = spawnSync('find', [newestDmg(), '-newermt', '-45 minutes'])
+  if (!existsSync(newestDmg()) || fresh.status !== 0) {
+    die(`Build did not produce a fresh dmg within 45 minutes — see ${buildLog}`)
+  }
   const dmgPath = newestDmg()
   if (AUTO) {
     installDmg(dmgPath)
