@@ -13,6 +13,8 @@ const UPSTREAM_URL = 'https://github.com/stablyai/orca.git'
 // --auto: launchd/unattended mode. Non-interactive, installs the built app into
 // /Applications itself, and reports through macOS notifications instead of a terminal.
 const AUTO = process.argv.includes('--auto')
+// --force-build: skip the "nothing merged" shortcut and (re)package + install anyway.
+const FORCE_BUILD = process.argv.includes('--force-build')
 
 // Why resolve from the script location: launchd runs with an arbitrary cwd, so
 // every repo-relative command is pinned to the fork checkout this script lives in.
@@ -209,7 +211,7 @@ function installDmg(dmgPath) {
 }
 
 function packageMac() {
-  if (AUTO && !mergedNewCommits) {
+  if (AUTO && !mergedNewCommits && !FORCE_BUILD) {
     // Why: unattended runs happen daily; only an actual merge is worth a repack.
     console.log('No new upstream commits merged — skipping the build.')
     return
