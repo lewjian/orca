@@ -139,6 +139,16 @@ function mergedChangedFiles() {
 }
 
 function verify(changedFiles) {
+  // Why after the merge and before packaging: a synced-but-unpushed main makes the
+  // daily GitHub Action merge the same upstream commits again, forking history.
+  const branch = gitOut(['branch', '--show-current'])
+  if (mergedNewCommits && branch === 'main') {
+    step('Pushing synced main to origin')
+    git(['push', 'origin', 'main'])
+  } else if (mergedNewCommits) {
+    console.log(`On ${branch} — push it when ready so origin/main keeps tracking upstream.`)
+  }
+
   step('Typecheck (pnpm tc)')
   run('pnpm', ['tc'])
 
