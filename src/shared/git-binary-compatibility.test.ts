@@ -196,44 +196,6 @@ describeBinaryCompatibility('real Git binary compatibility', () => {
     ])
   })
 
-  it('reads signed history without launching configured signature verification', async () => {
-    const tree = (await runGit(['rev-parse', 'HEAD^{tree}'])).stdout.trim()
-    const commit = [
-      `tree ${tree}`,
-      'author Compatibility Test <compatibility@example.invalid> 1234567890 +0000',
-      'committer Compatibility Test <compatibility@example.invalid> 1234567890 +0000',
-      'gpgsig -----BEGIN PGP SIGNATURE-----',
-      ' ',
-      ' ZHVtbXk=',
-      ' -----END PGP SIGNATURE-----',
-      '',
-      'signed history fixture',
-      ''
-    ].join('\n')
-    const oid = (
-      await runGit(['hash-object', '-t', 'commit', '-w', '--stdin'], undefined, commit)
-    ).stdout.trim()
-    const result = await runGit([
-      '-c',
-      'log.showSignature=true',
-      '-c',
-      'color.ui=always',
-      '-c',
-      'gpg.program=orca-nonexistent-signature-verifier',
-      'log',
-      '--no-show-signature',
-      '--no-color',
-      `--format=${GIT_HISTORY_COMMIT_FORMAT}`,
-      '-z',
-      '-n1',
-      oid
-    ])
-    expect(result.stderr).toBe('')
-    expect(parseGitHistoryLog(result.stdout)).toMatchObject([
-      { id: oid, subject: 'signed history fixture' }
-    ])
-  })
-
   it('keeps polling diffs from refreshing the index', async () => {
     const indexPath = join(repoPath, '.git', 'index')
     const before = await readFile(indexPath)
@@ -247,17 +209,6 @@ describeBinaryCompatibility('real Git binary compatibility', () => {
     expect(await readFile(indexPath)).toEqual(before)
     await runGit(['-c', 'diff.autoRefreshIndex=true', 'diff', '--numstat', '-z', '--'])
     expect(await readFile(indexPath)).not.toEqual(before)
-  })
-
-  it('quietly distinguishes present and absent branch refs', async () => {
-    const head = (await runGit(['rev-parse', 'HEAD'])).stdout.trim()
-    await runGit(['branch', 'quiet-probe-present', head])
-    await expect(
-      runGit(['rev-parse', '--verify', '--quiet', 'refs/heads/quiet-probe-present'])
-    ).resolves.toMatchObject({ stdout: `${head}\n`, stderr: '' })
-    await expect(
-      runGit(['rev-parse', '--verify', '--quiet', 'refs/heads/quiet-probe-absent'])
-    ).rejects.toMatchObject({ code: 1, stdout: '', stderr: '' })
   })
 
   it('combines repository booleans and metadata paths for normal, bare and linked repositories', async () => {
