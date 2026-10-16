@@ -1,5 +1,5 @@
 import type { Repo } from '../../../../../../shared/repo-types'
-import type { WorktreeLineage } from '../../../../../../shared/worktree/lineage-types'
+import type { WorktreeOccurrencePlan } from '../../../../../../shared/worktree-occurrence-plan'
 import type { WorkspaceStatusDefinition, Worktree } from '../../../../../../shared/worktree/types'
 import type { ExecutionHostId } from '../../../../../../shared/execution-host'
 import {
@@ -31,7 +31,6 @@ import type {
   Row,
   WorktreeGroupBy
 } from './row-types'
-import { orderMainWorktreeFirst } from './section-order'
 
 /** Everything section emission reads that stays fixed for one buildRows call. */
 export type SectionAppendContext = {
@@ -48,13 +47,10 @@ export type SectionAppendContext = {
   pendingByRepo: ReadonlyMap<string, PendingCreationRef[]>
   mixedWorktreeHostContextLabels: Map<string, string> | undefined
   noticeHostContextLabelByRepoId: Map<string, NoticeHostContext> | undefined
-  lineageById: Record<string, WorktreeLineage>
-  worktreeMap: Map<string, Worktree>
-  nestLineage: boolean
-  cyclicLineageIds: ReadonlySet<string>
-  /** Sections forced open past the per-project worktree overflow cap. */
+  occurrencePlan: WorktreeOccurrencePlan<Worktree>
+  /** Sections the user expanded past the per-project worktree cap. */
   overflowExpandedKeys?: ReadonlySet<string>
-  /** Worktrees whose section never collapses (active workspace, agent-send target). */
+  /** Worktrees whose section never collapses (agent-send target). */
   forceOpenWorktreeIds?: ReadonlySet<string>
 }
 
@@ -76,10 +72,7 @@ export function appendOrderedGroups(
     newExternalWorktreesInboxByRepo,
     pendingByRepo,
     mixedWorktreeHostContextLabels,
-    lineageById,
-    worktreeMap,
-    nestLineage,
-    cyclicLineageIds
+    occurrencePlan
   } = ctx
   for (const [key, group] of groupsToAppend) {
     const isCollapsed = collapsedGroups.has(key)
@@ -196,28 +189,19 @@ export function appendOrderedGroups(
           }
         }
       }
-      const items = groupBy === 'repo' ? orderMainWorktreeFirst(group.items) : group.items
       const hostContextLabelByRepoId =
         groupBy === 'repo'
           ? getMixedHostContextLabels(group, repoMap, projectIndex, hostLabelById)
           : undefined
-      // Why (STA-4343): repo grouping normally labels by repo, but one repo id can
-      // be registered on two hosts — then every row in the group shares a repo id
-      // and the per-repo label cannot tell them apart. Fall back to the per-row
-      // host labels, which are keyed by host-qualified identity.
-      const hostContextLabelByWorktreeIdentity =
-        groupBy === 'repo' && hostContextLabelByRepoId ? undefined : mixedWorktreeHostContextLabels
-      appendWorktreeRows(result, items, repoMap, lineageById, worktreeMap, {
-        nestLineage,
+      appendWorktreeRows(result, repoMap, occurrencePlan, {
+        overflowExpandedKeys: ctx.overflowExpandedKeys,
+        forceOpenWorktreeIds: ctx.forceOpenWorktreeIds,
+        overflowVisibleLimit: groupBy === 'repo' ? WORKTREE_GROUP_VISIBLE_LIMIT : undefined,
         collapsedGroups,
         groupDepth: projectGroupDepth,
         sectionKey: key,
         hostContextLabelByRepoId,
-        hostContextLabelByWorktreeIdentity,
-        cyclicLineageIds,
-        overflowExpandedKeys: ctx.overflowExpandedKeys,
-        forceOpenWorktreeIds: ctx.forceOpenWorktreeIds,
-        overflowVisibleLimit: groupBy === 'repo' ? WORKTREE_GROUP_VISIBLE_LIMIT : 0
+        hostContextLabelByWorktreeIdentity: mixedWorktreeHostContextLabels
       })
       for (const pair of folderPairs) {
         result.push(buildFolderWorkspaceRow(pair, projectGroupDepth))
