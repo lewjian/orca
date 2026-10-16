@@ -275,7 +275,9 @@ export function buildSidebarRowPlan(
       pendingByRepo,
       mixedWorktreeHostContextLabels,
       noticeHostContextLabelByRepoId,
-      occurrencePlan
+      occurrencePlan,
+      overflowExpandedKeys,
+      forceOpenWorktreeIds
     }
 
     if (groupBy !== 'repo' || projectGroups.length === 0) {
