@@ -69,6 +69,12 @@ export abstract class UpdaterScheduling extends UpdaterCheckFailure {
       this.sendStatus({ state: 'not-available' })
       return false
     }
+    // Why: fork local builds (`-local.` version) must never consult the official feed —
+    // this timer-driven path bypasses the UpdaterSetup guards, so gate it here too.
+    if (app.getVersion().includes('-local.')) {
+      this.sendStatus({ state: 'not-available' })
+      return false
+    }
     // Why: set the nudge marker before any events arrive so later checks can't inherit a stale campaign id; persisted id keeps a nudge card dismissable after relaunch.
     this.activeUpdateNudgeId = nudgeId
     // Why: 'checking-for-update' arrives a tick later, so a second focus/resume can slip in before status flips; track launch in memory to dedupe that gap.

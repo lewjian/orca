@@ -1,6 +1,5 @@
 import { useContext } from 'react'
-import { Image, Pressable, Text as NativeText } from 'react-native'
-import { MobileSelectableText as Text } from '../components/MobileSelectableText'
+import { Image, Pressable, Text } from 'react-native'
 import { INLINE_TEXT_SELECTION } from '../components/inline-text-selection'
 import { MobileMarkdown } from '../components/MobileMarkdown'
 import { isImageRefBlock, isTextBlock } from '../../../src/shared/native-chat-types'
@@ -13,7 +12,7 @@ import {
   isAgentSessionHostStatusPresentation
 } from '../../../src/shared/agent-session-host-status-rows'
 import { withoutPendingNativeChatVisualDirectiveTail } from '../../../src/shared/native-chat-visual-directive'
-import { MobileNativeChatImageViewerContext } from './mobile-native-chat-image-viewer-context'
+import { MobileNativeChatRowOverlaysContext } from './mobile-native-chat-row-overlays'
 import { isRenderableImageUri } from './mobile-native-chat-image-preview'
 import {
   CHAT_PROSE_SCALE,
@@ -104,14 +103,14 @@ function ImageAttachment({
   fontScale: number
   onLongPress?: () => void
 }): React.JSX.Element {
-  const openImage = useContext(MobileNativeChatImageViewerContext)
+  const { openImage } = useContext(MobileNativeChatRowOverlaysContext)
   const uri = block.url ?? block.path
   const label = block.alt ?? 'Attached image'
   if (!isRenderableImageUri(uri)) {
     return (
-      <NativeText style={[styles.imageRef, { fontSize: TEXT_SIZE * fontScale }]}>
+      <Text style={[styles.imageRef, { fontSize: TEXT_SIZE * fontScale }]}>
         🖼 {block.alt ?? block.path ?? block.url ?? 'image'}
-      </NativeText>
+      </Text>
     )
   }
   return (

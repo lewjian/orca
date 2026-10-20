@@ -115,9 +115,14 @@ function finishOrStartMerge() {
     git(['merge', '--no-edit', 'upstream/main'])
   } catch {
     const conflicted = gitOut(['diff', '--name-only', '--diff-filter=U'])
+    // Why abort: a half-merged tree with conflict markers must never survive the run —
+    // a later `git add -A` would commit the markers and the next daily run would merge on top.
+    git(['merge', '--abort'], { allowFailure: true })
     die(
-      `Merge conflicts:\n${conflicted.map((f) => `  - ${f}`).join('\n')}\n` +
-        'Resolve, `git add` the files, then re-run this script.'
+      `Merge conflicts (merge aborted, worktree restored):\n${conflicted
+        .map((f) => `  - ${f}`)
+        .join('\n')}\n` +
+        'Resolve locally by hand (`git merge upstream/main`), push, then re-run.'
     )
   }
 }

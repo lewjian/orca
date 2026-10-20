@@ -1,7 +1,7 @@
 import React from 'react'
 import type { VirtualItem } from '@tanstack/react-virtual'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import type { Row } from '../grouping/row-types'
+import type { Row } from '../../../../../../shared/sidebar-list/row-types'
 import { translate } from '@/i18n/i18n'
 
 type OverflowToggleRowArgs = {
