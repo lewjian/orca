@@ -126,11 +126,11 @@ function computeWorktreePathFromWorkspaceRoot(
   crossRepoGroup?: string
 ): string {
   const pathOps = getRuntimePathOps(repoPath, workspaceRoot)
-  // Cross-repo groups always nest: same-named worktrees from different repos share the group
-  // folder, so the repo layer is what keeps their paths apart.
+  // Cross-repo groups: the group folder already names the branch, so each repo gets a
+  // single layer (`cross-repo-{name}/{repo}`) instead of repeating the worktree name.
   if (crossRepoGroup) {
     const repoName = pathOps.basename(repoPath).replace(/\.git$/, '')
-    return pathOps.join(workspaceRoot, crossRepoGroup, repoName, sanitizedName)
+    return pathOps.join(workspaceRoot, crossRepoGroup, repoName)
   }
   if (nestWorkspaces) {
     const repoName = pathOps.basename(repoPath).replace(/\.git$/, '')

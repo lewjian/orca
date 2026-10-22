@@ -5,6 +5,8 @@ import { worktreeCreateGit } from '../git/worktree-create-git-executor'
 import { getRepoHostedReviewExecutionHostId } from '../source-control/hosted-review-execution-host'
 import type { BrowserWindow } from 'electron'
 import { existsSync } from 'node:fs'
+import { basename, dirname } from 'node:path'
+import { writeCrossRepoGroupReadme, crossRepoGroupBranchLabel } from './cross-repo-group-readme'
 import { randomUUID } from 'node:crypto'
 import type { Store } from '../persistence'
 import type { GitAdmissionTier } from '../../shared/rpc-contract/git-admission-tier-params'
@@ -1726,6 +1728,19 @@ async function performLocalWorktreeCreate(
     repo.id,
     worktreeLineage?.parentWorktreeId
   )
+  if (args.crossRepoGroup) {
+    // Why: the shared folder must explain itself — which repos and branches belong here.
+    const groupDir = dirname(worktree.path)
+    const repoName = basename(repo.path).replace(/\.git$/, '')
+    await writeCrossRepoGroupReadme(groupDir, {
+      repoName,
+      branch: crossRepoGroupBranchLabel(worktree.branch),
+      worktreePath: worktree.path,
+      createdAt: new Date()
+    }).catch((error) => {
+      console.error('cross-repo group README write failed', error)
+    })
+  }
   return {
     worktree: {
       ...worktree,

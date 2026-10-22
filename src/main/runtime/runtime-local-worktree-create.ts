@@ -1,3 +1,8 @@
+import { dirname } from 'node:path'
+import {
+  writeCrossRepoGroupReadme,
+  crossRepoGroupBranchLabel
+} from '../ipc/cross-repo-group-readme'
 import { worktreeCreateGit } from '../git/worktree-create-git-executor'
 import { shouldRunSetupForCreate } from '../effective-hook-config'
 import { getEffectiveHooks } from '../hooks'
@@ -197,6 +202,17 @@ async function performRuntimeLocalWorktreeCreate<T>(args: RuntimeLocalWorktreeCr
     onMetadataPersisted: args.onWorktreeMetadataPersisted,
     timing: args.timing
   })
+  if (request.crossRepoGroup) {
+    // Why: the shared folder must explain itself — which repos and branches belong here.
+    await writeCrossRepoGroupReadme(dirname(candidate.worktreePath), {
+      repoName: repoNameFromPath(repo.path),
+      branch: crossRepoGroupBranchLabel(candidate.branchName),
+      worktreePath: candidate.worktreePath,
+      createdAt: new Date()
+    }).catch((error) => {
+      console.error('cross-repo group README write failed', error)
+    })
+  }
   return {
     ...materialized,
     worktreePath: candidate.worktreePath,
@@ -204,4 +220,13 @@ async function performRuntimeLocalWorktreeCreate<T>(args: RuntimeLocalWorktreeCr
     addResult: git.addResult,
     ...(base.baseFallback ? { baseFallback: base.baseFallback } : {})
   }
+}
+
+function repoNameFromPath(repoPath: string): string {
+  const base =
+    repoPath
+      .replace(/[\\/]+$/, '')
+      .split(/[\\/]/)
+      .pop() ?? repoPath
+  return base.replace(/\.git$/, '')
 }

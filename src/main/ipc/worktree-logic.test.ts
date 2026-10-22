@@ -350,7 +350,7 @@ describe('computeWorktreePath', () => {
         undefined,
         'cross-repo-feature'
       )
-    ).toBe(posix.join('/workspaces', 'cross-repo-feature', 'my-project', 'feature'))
+    ).toBe(posix.join('/workspaces', 'cross-repo-feature', 'my-project'))
     expect(
       computeWorktreePath(
         'feature',
@@ -359,7 +359,7 @@ describe('computeWorktreePath', () => {
         undefined,
         'cross-repo-feature'
       )
-    ).toBe(posix.join('/workspaces', 'cross-repo-feature', 'my-project', 'feature'))
+    ).toBe(posix.join('/workspaces', 'cross-repo-feature', 'my-project'))
   })
 
   it('keeps two same-named cross-repo worktrees apart by repo folder', () => {
