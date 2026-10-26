@@ -87,17 +87,11 @@ export function appendWorktreeRows(
     plan.bySection.get(options.sectionKey) ?? [],
     (worktree) => options.collapsedGroups.has(getWorktreeLineageGroupKey(worktree))
   )
-  // Per-project overflow: group the materialized occurrences by their depth-0 root,
-  // keep the first N groups, and collapse the rest behind a toggle row. A forced-open
-  // worktree (agent-send target) disables collapsing for the section.
+  // Per-project overflow: keep the first N root groups plus every group that holds a
+  // pinned worktree (a running agent, the agent-send target), and collapse the rest
+  // behind a toggle row. Pinned groups do not consume the N visible slots.
   const overflowVisibleLimit = options.overflowVisibleLimit ?? 0
-  const anyForcedOpen = allOccurrences.some((occurrence) =>
-    options.forceOpenWorktreeIds?.has(occurrence.row.id)
-  )
-  const overLimit =
-    overflowVisibleLimit > 0 &&
-    !anyForcedOpen &&
-    allOccurrences.length > overflowVisibleLimit
+  const overLimit = overflowVisibleLimit > 0 && allOccurrences.length > overflowVisibleLimit
   const collapsed = overLimit && !options.overflowExpandedKeys?.has(options.sectionKey)
   let occurrences = allOccurrences
   let hiddenCount = 0
@@ -110,7 +104,20 @@ export function appendWorktreeRows(
         groups.at(-1)!.push(occurrence)
       }
     }
-    occurrences = groups.slice(0, overflowVisibleLimit).flat()
+    const kept: WorktreeOccurrence<Worktree>[] = []
+    let visibleRoots = 0
+    for (const group of groups) {
+      const hasPinned = group.some((occurrence) =>
+        options.forceOpenWorktreeIds?.has(occurrence.row.id)
+      )
+      if (visibleRoots < overflowVisibleLimit || hasPinned) {
+        kept.push(...group)
+        if (!hasPinned) {
+          visibleRoots += 1
+        }
+      }
+    }
+    occurrences = kept
     hiddenCount = allOccurrences.length - occurrences.length
   }
   const lastKeptKey = occurrences.at(-1)?.key

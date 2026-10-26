@@ -117,16 +117,35 @@ const WorktreeList = React.memo(function WorktreeList({
   )
 
   const agentSendTargetWorktreeId = useAgentSendTargetWorktreeId()
-  // Why only the agent-send target: the send picker must see the section holding its
-  // target. The active workspace stays collapsed like everything else — per-project
-  // lists keep showing 3 rows until the user explicitly expands them.
-  const forceOpenWorktreeIds = useMemo(() => {
+  const agentStatusByPaneKey = useAppStore((s) => s.agentStatusByPaneKey)
+  const tabsByWorktree = useAppStore((s) => s.tabsByWorktree)
+  // Worktrees whose rows must stay visible past the per-project cap: the workspace an
+  // agent is currently working in (or waiting on), and the agent-send target.
+  const pinnedVisibleWorktreeIds = useMemo(() => {
     const ids = new Set<string>()
     if (agentSendTargetWorktreeId) {
       ids.add(agentSendTargetWorktreeId)
     }
+    const tabIdToWorktreeId = new Map<string, string>()
+    for (const [worktreeId, tabs] of Object.entries(tabsByWorktree)) {
+      for (const tab of tabs) {
+        tabIdToWorktreeId.set(tab.id, worktreeId)
+      }
+    }
+    for (const [paneKey, entry] of Object.entries(agentStatusByPaneKey ?? {})) {
+      // A finished turn is not in-progress; everything else needs to stay reachable.
+      if (!entry || entry.state === 'done') {
+        continue
+      }
+      const separator = paneKey.indexOf(':')
+      const tabId = separator === -1 ? paneKey : paneKey.slice(0, separator)
+      const worktreeId = tabIdToWorktreeId.get(tabId)
+      if (worktreeId) {
+        ids.add(worktreeId)
+      }
+    }
     return ids
-  }, [agentSendTargetWorktreeId])
+  }, [agentSendTargetWorktreeId, agentStatusByPaneKey, tabsByWorktree])
   const { filterState, hasFilters, clearFilters, revealWorkspaceFilters } =
     useSidebarWorktreeFilters()
   const sortedIds = useSidebarWorktreeSortOrder({ repoMap, sortBy })
@@ -182,7 +201,7 @@ const WorktreeList = React.memo(function WorktreeList({
     visibleWorkspaceHostIds: filterState.visibleWorkspaceHostIds,
     workspaceHostScope: filterState.workspaceHostScope,
     expandedOverflowKeys: expandedWorktreeOverflows,
-    forceOpenWorktreeIds: forceOpenWorktreeIds
+    forceOpenWorktreeIds: pinnedVisibleWorktreeIds
   })
   const effectiveCollapsedGroups = rowModel.effectiveCollapsedGroups
   const selection = useSidebarWorktreeSelection({

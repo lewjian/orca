@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Repo } from '../repo-types'
 import type { Worktree } from '../worktree/types'
-import type {
-  WorktreeOccurrence,
-  WorktreeOccurrencePlan
-} from '../worktree-occurrence-plan'
+import type { WorktreeOccurrence, WorktreeOccurrencePlan } from '../worktree-occurrence-plan'
 import type { Row } from './row-types'
 import { appendWorktreeRows } from './row-builders'
 import { WORKTREE_GROUP_VISIBLE_LIMIT } from './row-types'
@@ -142,16 +139,22 @@ describe('per-project worktree overflow collapse', () => {
     expect(rows.find((row) => row.type === 'overflow-toggle')).toMatchObject({ expanded: true })
   })
 
-  it('never collapses a section holding a forced-open worktree', () => {
-    const occurrences = Array.from({ length: WORKTREE_GROUP_VISIBLE_LIMIT + 2 }, (_, i) =>
+  it('keeps pinned worktrees visible past the cap without spending visible slots', () => {
+    const occurrences = Array.from({ length: WORKTREE_GROUP_VISIBLE_LIMIT + 3 }, (_, i) =>
       makeOccurrence(`wt-${i}`, 0)
     )
+    const pinnedId = occurrences.at(-1)!.row.id
     const rows = appendRows(occurrences, {
       overflowVisibleLimit: WORKTREE_GROUP_VISIBLE_LIMIT,
-      forceOpenWorktreeIds: new Set([occurrences.at(-1)!.row.id])
+      forceOpenWorktreeIds: new Set([pinnedId])
     })
-    expect(rows.filter((row) => row.type === 'item')).toHaveLength(occurrences.length)
-    expect(rows.find((row) => row.type === 'overflow-toggle')).toBeUndefined()
+    const items = rows.filter(
+      (row): row is Extract<(typeof rows)[number], { type: 'item' }> => row.type === 'item'
+    )
+    // First N rows plus the pinned one, which does not consume a visible slot.
+    expect(items).toHaveLength(WORKTREE_GROUP_VISIBLE_LIMIT + 1)
+    expect(items.some((row) => row.worktree.id === pinnedId)).toBe(true)
+    expect(rows.find((row) => row.type === 'overflow-toggle')).toMatchObject({ hiddenCount: 2 })
   })
 
   it('does not collapse when no limit is set (pinned and flat modes)', () => {
