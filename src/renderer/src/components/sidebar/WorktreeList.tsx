@@ -24,6 +24,7 @@ import { markSidebarWorktreeActiveImmediately } from './worktree-list/rows/optio
 import { EMPTY_PROJECT_GROUPS } from './worktree-list/viewport/viewport-props'
 import { NOOP_WORKSPACE_BOARD_DRAG_PREVIEW_CALLBACK } from './worktree-list/drag/drop-commit-context'
 import { useAgentSendTargetWorktreeId } from './worktree-list/listing/use-agent-send-target'
+import { usePinnedVisibleWorktreeIds } from './worktree-list/listing/use-pinned-visible-worktrees'
 import { useProjectGroupDialogs } from './worktree-list/rows/use-project-group-dialogs'
 import { useSidebarExternalWorktreeCards } from './worktree-list/listing/use-external-worktree-cards'
 import { useSidebarHostVisibleScope } from './worktree-list/listing/use-host-visible-scope'
@@ -117,35 +118,7 @@ const WorktreeList = React.memo(function WorktreeList({
   )
 
   const agentSendTargetWorktreeId = useAgentSendTargetWorktreeId()
-  const agentStatusByPaneKey = useAppStore((s) => s.agentStatusByPaneKey)
-  const tabsByWorktree = useAppStore((s) => s.tabsByWorktree)
-  // Worktrees whose rows must stay visible past the per-project cap: the workspace an
-  // agent is currently working in (or waiting on), and the agent-send target.
-  const pinnedVisibleWorktreeIds = useMemo(() => {
-    const ids = new Set<string>()
-    if (agentSendTargetWorktreeId) {
-      ids.add(agentSendTargetWorktreeId)
-    }
-    const tabIdToWorktreeId = new Map<string, string>()
-    for (const [worktreeId, tabs] of Object.entries(tabsByWorktree)) {
-      for (const tab of tabs) {
-        tabIdToWorktreeId.set(tab.id, worktreeId)
-      }
-    }
-    for (const [paneKey, entry] of Object.entries(agentStatusByPaneKey ?? {})) {
-      // A finished turn is not in-progress; everything else needs to stay reachable.
-      if (!entry || entry.state === 'done') {
-        continue
-      }
-      const separator = paneKey.indexOf(':')
-      const tabId = separator === -1 ? paneKey : paneKey.slice(0, separator)
-      const worktreeId = tabIdToWorktreeId.get(tabId)
-      if (worktreeId) {
-        ids.add(worktreeId)
-      }
-    }
-    return ids
-  }, [agentSendTargetWorktreeId, agentStatusByPaneKey, tabsByWorktree])
+  const pinnedVisibleWorktreeIds = usePinnedVisibleWorktreeIds(agentSendTargetWorktreeId)
   const { filterState, hasFilters, clearFilters, revealWorkspaceFilters } =
     useSidebarWorktreeFilters()
   const sortedIds = useSidebarWorktreeSortOrder({ repoMap, sortBy })
